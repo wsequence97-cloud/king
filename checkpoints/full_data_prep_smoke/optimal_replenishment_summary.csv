@@ -1,0 +1,4 @@
+dc_id,sku_id,factory_id,unit_transport_cost,holding_cost,stockout_cost,objective,transport_cost,holding_cost_total,stockout_cost_total,total_cost_check
+DC001,SKU001,F001,224.0,3.36,336.0,20855.52,0.0,20855.52,0.0,20855.52
+DC001,SKU002,F001,224.0,3.36,336.0,63385.27999999977,46592.0,9737.279999999999,7056.0,63385.28
+DC001,SKU005,F001,224.0,3.36,336.0,300810.7199999742,282240.0,17226.72,1344.0,300810.72

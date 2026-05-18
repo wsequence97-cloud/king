@@ -1,0 +1,677 @@
+﻿Expert Systems With Applications 261 (2025) 125464
+
+W. Guo et al.
+
+Fig. 5. The model architecture of TFT.
+
+𝑡 (i.e. 𝑦𝑡−𝑘∶𝑡 = {𝑦𝑡−𝑘 , … , 𝑦𝑡 }, 𝑜𝑡−𝑘∶𝑡 = {𝑜𝑡−𝑘 , … , 𝑜𝑡 }) and known inputs
+across the entire range 𝑧𝑡−𝑘∶𝑡+𝜏 (i.e. 𝑧𝑡−𝑘∶𝑡+𝜏 = {𝑧𝑡−𝑘 , … , 𝑧𝑡 , … , 𝑧𝑡+𝜏 }),
+where 𝑘 is a finite look-back window, 𝜏 is the prediction point, 𝜏 ∈
+(1, … , 𝜏max ). Lastly, each quantile prediction is expressed as follows:
+(
+)
+𝑦̂𝑖 (𝑞, 𝑡, 𝜏) = 𝑓𝑞 𝜏, 𝑦𝑡−𝑘∶𝑡 , 𝑜𝑡−𝑘∶𝑡 , 𝑧𝑡−𝑘∶𝑡+𝜏 , 𝑆
+(2)
+
+Notably, when deploying the trained model on the test dataset, the
+output requires further adjustment, rounding it off to non-negative
+integers.
+To sum up, the designed TFT-MPIR model can simultaneously predict demand, VLT, and replenishment quantities in each iteration.
+Additionally, the intermediate variables, demand and VLT, can be used
+to monitor model performance. By observing anomalies in demand
+and VLT outputs during real-time operation of the TFT-MPIR model,
+decision-makers can identify abnormal replenishment outputs and analyze their underlying reasons. Moreover, the model can continuously
+identify and adapt to long-term market trends based on historical
+data, providing ongoing inventory management support to retailers and
+helping them make more accurate inventory decisions.
+
+In TFT-MPIR model, we integrate the Long Short-Term Memory
+(LSTM) network for VLT forecasting, a feedback neural network optimally designed for processing time series data (Graves & Graves, 2012).
+LSTM has demonstrated its efficacy in various domains, including
+finance and tourism (Cao, Li, & Li, 2019; Chimmula & Zhang, 2020;
+He, Ji, Wu, & Tso, 2021; Livieris, Pintelas, & Pintelas, 2020). The final
+module for replenishment decision-making is constructed as a fully
+connected layer. ReLU is employed as the activation function within
+our model, functioning as a segmented linear function that outputs
+positive inputs as they are, while nullifying negative ones. To combat
+overfitting, a common challenge in deep learning, we incorporate a
+Dropout layer which randomly disables a selection of neurons and their
+connections during the training process, effectively preventing overfitting and enhancing the integration efficiency across diverse network
+architectures (Srivastava, Hinton, Krizhevsky, Sutskever, & Salakhutdinov, 2014). The training phase is governed by an objective function,
+defined as:
+min
+𝜃
+
+𝑁
+∑
+
+{𝜆1 𝐿̂ 1 (𝑂𝑢𝑡1𝑖 , 𝑑𝑡 ) + 𝜆2 𝐿̂ 2 (𝑂𝑢𝑡2𝑖 , 𝑙𝑡 ) + 𝜆3 𝐿̂ 3 (𝑂𝑢𝑡3𝑖 , 𝑞𝑡∗ )}
+
+4. TFT-MPIR evaluation
+To appraise the efficacy of TFT-MPIR model and compare it with
+benchmark strategies, we created a series of simulated datasets and
+incorporated historical sales data from an actual beverage supplier,
+which effectively mirrors real-life replenishment situations. The ReLU
+function was employed as the activation function, with a Dropout rate
+set at 0.2. The learning rate during training was maintained at 0.01. For
+the loss function’s objective, the weighting parameters were established
+as 𝜆1 = 𝜆2 = 0.1. We utilized PyTorch for neural network backpropagation, implementing an early stopping policy with a patience threshold
+of 20. The computational environment comprised a Linux operating
+system, powered by an Intel(R) Xeon(R) Gold 6330 CPU @ 2.00 GHz,
+with 256 GB RAM and an NVIDIA A40 GPU.
+
+(3)
+
+𝑖=1
+
+In this function, 𝜃 represents the collection of neural network parameters slated for optimization, and 𝑁 denotes the total count of training
+data. The terms 𝜆1 and 𝜆2 are smaller numerical values penalizing
+inaccuracies in demand and VLT predictions, instrumental in regulating
+the gradient descent’s iteration step size for streamlined model training.
+The first two components of the function calculate the loss between the
+predictions of demand and VLT and their actual values. The third component assesses the loss between the predicted replenishment quantities
+and the optimal quantities identified earlier. This design, anchored in
+the principle that replenishment decisions heavily depend on accurate
+demand and VLT information, is crucial for effective decision-making.
+
+4.1. Data
+For assessing the TFT-MPIR model, we engaged both artificially
+simulated and real-world datasets. The simulated dataset was crafted
+with a framework comprising a single factory and a single distribution
+warehouse, covering a spectrum of 1000 distinct SKUs, equating to
+1000 different DC_SKUs combinations. This setup was informed by
+the ‘‘80/20 rule’’ of logistics research, which typically observes that
+approximately 20% of a company’s products generate 80% of its sales
+7
+
+Expert Systems With Applications 261 (2025) 125464
+
+W. Guo et al.
+
+Fig. 6. Inventory change chart of a certain DC_SKU: (a) inventory level, (b) stockout quantity, (c) order quantity.
+
+revenue (Coelho & Mendes, 2019). Accordingly, the average sales
+volumes in our simulated dataset of 1000 combinations adhered to a
+Pareto distribution. Each DC_SKU combination began recording sales
+and VLT from January 1, 2018, accumulating 900 records, where the
+sales data adhered to a normal distribution, and VLT values ranged
+from 1 to 10, following a gamma distribution.
+The real dataset was derived from a leading beverage supplier,
+and included detailed information on the supply warehouse network
+and sales of a specific product category within a certain region. The
+company operated 2 production factories and 18 DC warehouses in that
+area, distributing 77 different SKUs. The original dataset encompassed
+1080 DC and SKU combinations, which were narrowed down to 708
+after a preliminary data cleansing process. Included in this dataset
+were historical sales figures, VLT records, initial inventory holdings,
+and various standard constraints like the unit transportation cost and
+box-to-pallet conversion ratios. The descriptive statistics of data is seen
+in Supplementary Material Tab. S1–S7.
+
+solved using a commercial solver. The third benchmark involves an
+E2E model comprised entirely of MLP for predicting replenishment
+quantities, In the implementation of E2E-MLP methodology, the neural
+network architecture employs a MLP exclusively to map the input
+feature data onto optimal decision-making outcomes (Liu, Letchford,
+& Svetunkov, 2022; Oroojlooyjadid et al., 2020; Tian & Zhang, 2023).
+To evaluate the performance, we use six metrics: total inventory
+cost, holding cost, stockout cost, transportation cost, stockout rate,
+and turnover rate. The total inventory cost is the aggregate of the
+holding, stockout, and transportation costs. The stockout rate is defined
+as the percentage of days with stockouts in the test set, indicating
+the frequency of stockouts. It is calculated as the ratio of days with
+stockouts (days where the stockout cost is above zero) to the total
+number of days. The inventory turnover rate is derived by dividing the
+average daily inventory level by the average demand.
+
+4.2. Experiments
+
+In the case of the simulated dataset as shown in Table 3, the proposed TFT-MPIR method outperformed the other four methodologies,
+securing the minimum total inventory cost. It also recorded the lowest
+figures in both stockout cost and stockout rate. We can see that an E2E
+deep learning model has two key advantages. Firstly, by comparing
+the costs of TFT-MPIR against PTO, and E2E-MLP against PTO, we
+can observe that using an E2E framework rather than a two-step PTO
+framework offers benefits. Both TFT-MPIR and PTO use the same deep
+learning models to predict demand and VLT, but TFT-MPIR provides
+replenishment decision results directly from the input, whereas PTO
+follows a two-step process. We suspect that prediction errors in demand
+and VLT can accumulate during the optimization phase, misleading
+the final replenishment decisions. The main optimization target of
+the end-to-end framework is the final replenishment quantity, which
+shortens the decision-making process and leads to more optimal results.
+Comparing the costs of TFT-MPIR with E2E-MLP, we believe that the
+use of TFT and LSTM models in our sub-modules gives our model a
+greater advantage in accurately predicting demand and VLT, resulting
+in more reasonable replenishment decisions and subsequently lower
+stockout costs.
+Regarding the real dataset, Fig. 6 illustrates the inventory levels
+and ordering dynamics for a specific DC_SKU combination over the
+test period. In this scenario, it is assumed that for the thirty days
+leading up to the test period, the ordering was in line with the optimal replenishment quantity (OPT), and any in-transit orders, which
+were placed but had not arrived yet, were accurately included in the
+inventory calculations for these thirty days. In Fig. 6(a), the variations
+in inventory levels as per different methods are depicted. Fig. 6(b)
+showcases the stockout occurrences on a daily basis for each method.
+Finally, Fig. 6(c) demonstrates the quantities ordered on replenishment
+days by each method, quantified in terms of pallets.
+Furthermore, we computed a cumulative cost change graph for
+this case study. As illustrated in Fig. 7, the (t, R, S) method is prone
+
+4.3. Results
+
+In the study, the experimental setup for both the simulated and
+actual datasets involved allocating the final thirty days as the test
+set for each DC_SKU pairing. The rest of the data was divided into
+80% for training purposes and 20% for validation. The validation set
+played a crucial role in evaluating the neural network model’s response
+to various combinations of hyperparameters, which was instrumental
+in choosing the most effective parameters and averting overfitting.
+The context for each day encompassed data from the previous 30
+days, denoted as 𝑇 being 30. For instance, the context for May 1st
+entailed historical data ranging from April 1st to April 30th, inclusive
+of target vectors. Considering the real dataset, each DC’s transportation
+costs varied between the two supplying factories. Assuming no storage
+capacity limits at the factories and DCs, the DCs would naturally opt
+for the factory offering lower unit transportation costs. In the base
+scenario, the unit transportation cost for each DC_SKU combination was
+predetermined. It was assumed that the daily unit stockout cost for each
+combination was set at 150% of the unit transportation cost, with the
+unit holding cost being 1% of the unit stockout cost.
+In experimental design, we utilized three benchmark strategies for
+comparison. The first is the (t, R, S) policy, an integrated inventory
+strategy that combines the (t, S) and (R, S) policies. (t, R, S) policy
+involves a fixed review period 𝑡, a maximum inventory level 𝑆, and
+a predetermined reorder point 𝑅. If inventory falls below the reorder
+point after the specified review period, a replenishment order is issued
+up to level 𝑆; otherwise, no order is placed, with the order quantity
+being the difference between the maximum inventory level and the
+inventory level at the time of review. The second benchmark employs
+PTO method, where a deep neural network is trained to precisely forecast future demand and VLT. This yields daily point forecasts for future
+demand and VLT, followed by solving a deterministic batch problem
+to ascertain the daily replenishment quantity, which can be efficiently
+8
+
+Expert Systems With Applications 261 (2025) 125464
+
+W. Guo et al.
+
+Fig. 7. Cumulative cost graph of a DC_SKU — (a) cumulative holding cost, (b) cumulative stockout cost, (c) cumulative transportation cost.
+
+Table 3
+Comparison results of different methods on simulated data. (The percentage values signify the positive (+) or negative (−) growth rates, indicating how
+the values of the current method compare to those of the OPT benchmark).
+Method
+
+Total cost
+
+Holding cost
+
+Stockout cost
+
+Transportation cost
+
+Stockout ratio
+
+Turnover rate
+
+OPT
+TFT-MPIR
+(t, R, S)
+PTO
+E2E-MLP
+
+286 242
++15.7%
++40.4%
++25.2%
++21.8%
+
+10 361
++25.5%
++50.9%
+−21.6%
++3.4%
+
+5698
++270.9%
++1148.5%
++1988.6%
++1131.5%
+
+270 183
++9.9%
++16.6%
+−14.4%
+−0.9%
+
+14.12
++20.0%
++188.5%
++148.7%
++101.3%
+
+3.51
++12.0%
+−33.1%
+−43.9%
++1.9%
+
+Table 4
+Comparison results of different methods. (The percentage values signify the positive (+) or negative (−) growth rates, indicating how the values of the
+current method compare to those of the OPT benchmark).
+Method
+
+Total cost
+
+Holding cost
+
+Stockout cost
+
+Transportation cost
+
+Stockout ratio
+
+Turnover rate
+
+OPT
+TFT-MPIR
+(t, R, S)
+PTO
+E2E-MLP
+
+2 668 932
++15.8%
++34.8%
++24.1%
++22.3%
+
+77 248
++7.1%
++137.0%
+−29.9%
++78.1%
+
+3078
++28 185.0%
++16 042.7%
++44 051.3%
++31 847.8%
+
+2 588 606
+−17.4%
++12.7%
+−26.7%
+−17.2%
+
+3.61
++354.0%
++248.5%
++729.4%
++377.6%
+
+2.89
+−8.4%
++46.4%
+−55.8%
++44.9%
+
+Table 5
+Network hyper-parameters.
+
+to ordering up to higher inventory levels, and witnesses the swiftest
+escalation in holding costs, culminating in the highest overall holding
+costs. Conversely, the PTO method, is characterized by the smallest
+order quantities, saws a slower increment in total holding costs, ending
+up with the lowest final total holding costs. However, the PTO method
+leads to a steep increase in total stockout costs, ultimately the highest
+among the methods. Notably, the changes across various aspects in
+TFT-MPIR method shows a closer alignment with the OPT method.
+Table 4 presents a comprehensive performance assessment for 708
+DC_SKU combinations from the actual dataset. According to the table,
+TFT-MPIR model reports lower total costs than all three benchmark
+strategies. Notably, it outperforms the PTO and E2E-MLP methods in
+achieving lower stockout rates and costs, achieving lower holding and
+transportation costs compared to (t, R, S) and E2E-MLP models. Besides,
+as a basic method, (t, R, S) performs the worst in both simulated and
+real data scenarios, resulting in the highest inventory costs.
+We evaluate the performance of each strategy under varying ratios
+between unit stockout cost and unit transportation cost. As depicted
+in Fig. 8(a), TFT-MPIR method consistently achieves the lowest total
+inventory costs at ratios of 150%, 200%, and 250%. According to
+the detailed cost breakdown shown in Figs. 8(b), 8(c) and 8(d), it is
+evident that the escalation in stockout costs is the main driver of the
+overall increase in total inventory costs as the ratio increases, while
+the transportation costs remain relatively unchanged. Notably, even
+though the (t, R, S) strategy incurs the lowest stockout costs across
+varying ratios, it is responsible for the highest associated holding and
+transportation costs.
+
+Hyperparameter
+
+Range
+
+Learning rate
+Dropout rate
+TFT hidden size
+TFT attention head size
+LSTM hidden size
+LSTM layer
+Integration module
+
+{0.0001, 0.001,0.005,0.01}
+{0.1,0.2,0.3}
+{32,64,128}
+{2,4,8}
+{32,64,100,128}
+{1,2}
+{50,50},{100,100},{100,100,50}
+
+across a variety of hyperparameter choices and model covariates. Hyperparameters are pivotal in machine learning models as they essentially shape the model’s architecture and its overall efficacy. The critical
+hyperparameters for the TFT-MPIR model are outlined in Table 5.
+During the model’s training phase, a grid search method is utilized
+to explore various hyperparameter combinations within a predefined
+scope, and the average total inventory cost is computed on the validation set to identify the most optimal hyperparameter values. The
+standard setting for the ratio between unit stockout cost and unit
+transportation cost is set as 150%.
+(1) Analysis of Learning Rate Sensitivity: The learning rate stands
+as a key hyperparameter in the training of neural networks (LeCun,
+Bengio, & Hinton, 2015). Table 6 delineates the impact of varying
+learning rates on the TFT-MPIR model’s performance in the test set. In
+our analysis, an increase in the learning rate from 0.0001 to 0.01 corresponding with a reduction in both total and stockout costs, signifying
+the development of a more proficient model.
+(2) Sensitivity Analysis of TFT Hidden Layer Size: The demand
+prediction module employs the TFT model, with the size of the TFT
+hidden layer being a primary hyperparameter. Table 7 indicates how
+different sizes of the TFT hidden layer impact the performance of
+
+4.4. Sensitivity analysis
+In this section, we conduct extensive sensitivity analyses, extending prior experiments to assess TFT-MPIR robustness and adaptability
+9
+
+Expert Systems With Applications 261 (2025) 125464
+
+W. Guo et al.
+
+Fig. 8. Performance of each method under different ratios of unit stockout cost to unit transportation cost: (a) Comparison chart of total inventory cost for each method, (b)
+holding cost, (c) stockout cost, (d) transportation cost.
+
+Table 6
+Sensitivity analysis of TFT-MPIR to learning rate. (The percentage values signify the positive (+) or negative (−) growth rates, indicating how
+the values of the current parameter compare to those of the OPT benchmark).
+
+Total cost
+Holding cost
+Stockout cost
+Transportation cost
+
+OPT
+
+lr = 0.0001
+
+lr = 0.001
+
+lr = 0.005
+
+lr = 0.01
+
+3 900 093
+103 899
+2469
+3 793 725
+
++18.1%
++13.6%
++62 189.9%
+−22.3%
+
++11.1%
+−1.5%
++53 125.1%
+−23.2%
+
++9.8%
+−4.7%
++53 258.1%
+−24.4%
+
++7.7%
++14.2%
++44 590.8%
+−21.5%
+
+Table 7
+Sensitivity analysis of TFT-MPIR to TFT hidden size. (The percentage values signify
+the positive (+) or negative (−) growth rates, indicating how the values of the current
+parameter compare to those of the OPT benchmark).
+
+Total cost
+Holding cost
+Stockout cost
+Transportation cost
+
+OPT
+
+32
+
+64
+
+128
+
+3 900 093
+103 899
+2469
+3 793 725
+
++13.5%
+10.7%
++58 062.5%
+−24.3%
+
++13.2%
++3.6%
++53 756.1%
+−21.6%
+
++10.4%
++3.7%
++49 086.1%
+21.4%
+
+Table 8
+Sensitivity analysis of TFT−MPIR to TFT attention head size. (The percentage values
+signify the positive (+) or negative (−) growth rates, indicating how the values of the
+current parameter compare to those of the OPT benchmark).
+
+Total cost
+Holding cost
+Stockout cost
+Transportation cost
+
+the TFT-MPIR model in the test dataset. Overall, as the size of the
+TFT hidden layer increases from 32 to 128, there is an improvement
+in the model’s performance. With a too-small TFT hidden layer size,
+the demand prediction module fails to extract sufficient features from
+historical sales data, leading to insufficient information transfer to
+subsequent neural network layers and suboptimal decision-making.
+
+OPT
+
+2
+
+4
+
+8
+
+3 900 093
+103 899
+2469
+3 793 725
+
++11.1%
+−0.4%
++53 125.1%
+−23.2%
+
++10.4%
++3.7%
++49 086.1%
+−21.4%
+
++11.6%
++11.7%
++51 034.8%
+−21.7%
+
+model’s TFT affects its efficiency. Table 8 details the influence of different counts of attention heads on the TFT−MPIR model’s performance
+in the test set, offering insights into how this key aspect of the model’s
+structure impacts its overall functionality.
+(4) Assessing the Impact of LSTM Hidden Layer Size: The quantity
+of hidden layers within the LSTM, particularly in the VLT prediction
+segment, plays a pivotal role. Table 9 elaborates on how variations
+in the size of LSTM hidden layers influence the efficiency of the
+
+(3) Evaluating the Impact of TFT Attention Heads: In our study,
+we assess how the number of attention heads within the TFT−MPIR
+10
+
+Expert Systems With Applications 261 (2025) 125464
+
+W. Guo et al.
+
+Table 9
+Sensitivity analysis of TFT−MPIR to LSTM hidden size. (The percentage values signify the positive (+) or negative (−) growth rates, indicating
+how the values of the current parameter compare to those of the OPT benchmark).
+
+Total cost
+Holding cost
+Stockout cost
+Transportation cost
+
+OPT
+
+32
+
+64
+
+100
+
+128
+
+3 900 093
+103 899
+2469
+3 793 725
+
++12.6%
++14.8%
++53 859.1%
+−22.6%
+
++11.1%
++4.9%
++51 984.4%
+−22.6%
+
++12.0%
+−0.8%
++60 362.9%
+−26.9%
+
++10.4%
++3.7%
++49 086.1%
+−21.4%
+
+TFT−MPIR model in the test environment, highlighting the correlation
+between hidden layer dimensions and overall model performance.
+
+the decision-making process and enable the early detection of training
+and prediction issues, enhancing the model’s applicability and stability. Facing scenarios with diverse product categories and uncertain
+demand and VLT, adopting an end-to-end concept in inventory replenishment strategy represents an innovative and efficient method,
+minimizing manual intervention and thereby facilitating more precise
+inventory decisions at reduced operational costs. Future research directions outlined in this work include: (1) Expanding the scope of
+the E2E model by factoring in additional practical elements, such as
+the storage capacity limits of factories and distribution centers, and
+integrating varying transportation costs among multiple warehouses
+and distribution hubs. This will facilitate the development of a more
+comprehensive E2E inventory replenishment framework capable of
+determining optimal replenishment sources for different distribution
+centers. (2) While the study focused on replenishment on predetermined order days, it acknowledges that certain products may require
+more frequent restocking. Future efforts will aim to also determine the
+optimal scheduling of subsequent replenishment cycles, leading to the
+creation of a more holistic solution.
+
+5. Conclusion and discussion
+Inventory costs form an integral part of a company’s expenses.
+Effective inventory replenishment strategies are crucial for businesses,
+as they not only reduce inventory costs but also optimize capital
+utilization, lower risks, and bolster competitiveness and profitability. In
+today’s context of escalating market competition and complex supply
+chain dynamics, the significance of inventory management, particularly in terms of replenishment decisions, cannot be overstated. It is
+essential for companies to implement scientifically-backed inventory
+replenishment methods to maintain optimal inventory levels, thereby
+circumventing the risks and costs linked to disproportionate inventory
+levels. In our study, we introduced an E2E deep learning framework
+for addressing multi-period inventory replenishment challenges that include transportation costs, eliminating the need for presumptions about
+future demand and VLT distributions. Our training objective focused
+on identifying replenishment order quantities that minimize the total
+inventory cost, encompassing transportation, holding, and stockout
+costs. The efficacy of our model was validated through numerical
+implementations using both simulated and real datasets, establishing
+its superiority compared to benchmark models. The key findings of our
+research can be summarized as follows: (1) In the simulated dataset
+analysis, our TFT-MPIR model successfully achieved the lowest total
+inventory, stockout costs, and stockout rates in the test set. Compared
+to the optimal post-hoc solution, the total inventory cost with TFTMPIR was higher by 15.67%. The traditional (t, R, S) method performed
+poorly, showing a 40.36% higher total inventory cost and generating
+the most transportation costs. The E2E-MLP method resulted in a
+21.78% higher total inventory cost than the optimal solution. The
+findings unequivocally demonstrated the exceptional efficacy of TFTMPIR in the realm of inventory management. (2) Within the realm of
+actual data, in contrast to the total inventory costs ascertained by the
+OPT, our TFT-MPIR model in the test dataset consistently exhibits the
+narrowest margin of difference from OPT, at 15.8%. This performance
+is markedly superior to the disparities observed in the (t, R, S) method,
+PTO method, and E2E-MLP method when compared with OPT, which
+register at 34.8%, 24.1%, and 22.3%, respectively. Furthermore, a
+rigorous sensitivity analysis conducted on the dataset corroborated the
+robustness and versatility of the TFT-MPIR model. A pivotal observation emerged when altering the ratio between unit stockout and
+transportation costs: the primary driver of total inventory cost escalation was the increment in stockout costs. Notably, the TFT-MPIR
+model demonstrated a relatively gradual increase in stockout costs, thus
+preserving its capability to consistently attain the lowest total inventory
+costs across all benchmarks. This insight underscores the method’s
+superiority, attributed to its reduction of intermediate steps, thereby
+minimizing information loss, averting errors in intermediary processes,
+and ensuring that each component of the model significantly influences
+decision-making, effectively safeguarding against further adverse effects on decision performance. (3) Our approach, which integrates the
+prediction and optimization of crucial decision variables in a modular
+framework, proved to be a multi-faceted model. It not only outputs
+recommended replenishment decisions from historical contextual data
+but also generates demand and VLT forecasts. These features guide
+
+CRediT authorship contribution statement
+Guo Weixing: Data curation, Formal analysis, Methodology, Validation, Writing – original draft, Writing – review & editing. Ren
+Zhuoming: Conceptualization, Formal analysis, Methodology, Writing
+– original draft, Writing – review & editing, Supervision. Du Wenli:
+Formal analysis, Validation, Writing – original draft, Writing – review
+& editing. Weng Tongfeng: Formal analysis, Methodology, Writing –
+original draft.
+Declaration of competing interest
+The authors declare that they have no known competing financial interests or personal relationships that could have appeared to
+influence the work reported in this paper.
+Data availability
+The datasets used to support the findings of this study are available
+from the website (https://www.coap.online/competitions/1).
+Acknowledgments
+The work is partially supported by National Natural Science Foundation of China (Grant Nos. 61803137 and 11805128), Scientific
+Research Fund of Zhejiang Provincial Education Department, China
+(Y202353590).
+Ethical approval statements
+Ethical approval was not required as the study did not involve
+human participants.
+Informed consent statements
+This article does not contain any studies with human participants
+performed by any of the authors.
+11
+
+

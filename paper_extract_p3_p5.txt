@@ -1,0 +1,611 @@
+﻿Expert Systems With Applications 261 (2025) 125464
+
+W. Guo et al.
+Table 1
+Contribution of this article compared to previous studies.
+Method
+
+Articles
+
+Period
+
+Demand
+
+VLT
+
+Trans cost
+
+Neural network
+
+Base stock and (s,S)
+
+Ehrhardt (1984) and
+Kaplan (1970)
+
+Multi
+
+Assume certain
+knowledge
+
+Assume certain
+knowledge
+
+No
+
+–
+
+Approximation
+algorithms
+
+Levi, Janakiraman
+et al. (2008), Levi
+et al. (2007) and
+Levi, Roundy et al.
+(2008)
+Levi and Shi (2013)
+
+Multi
+
+Assume certain
+knowledge
+
+No
+
+No
+
+–
+
+Multi
+
+Assume certain
+knowledge
+
+Assume as a known
+constant
+
+No
+
+–
+
+Joint estimation
+optimization
+
+Ban and Rudin
+(2019)
+
+Single
+
+Uncertain
+
+No
+
+No
+
+–
+
+Joint estimation
+optimization
+
+Oroojlooyjadid et al.
+(2020)
+
+Single
+
+Uncertain
+
+No
+
+No
+
+MLP
+
+E2E
+
+Donti et al. (2017)
+
+Single
+
+Randomly generated
+
+No
+
+No
+
+Fully connected network
+
+E2E
+
+Tian and Zhang
+(2023)
+
+Single
+
+Uncertain
+
+No
+
+No
+
+Modular designed and
+integrated textual review
+features
+
+E2E
+
+Qi et al. (2023)
+
+Multi
+
+Uncertain
+
+Uncertain
+
+No
+
+E2E
+
+This paper
+
+Multi
+
+Uncertain
+
+Uncertain
+
+Linear
+
+Modular designed and
+based on MQRNN (Wen,
+Torkkola, Narayanaswamy,
+& Madeka, 2017)
+Modular designed and
+based on TFT
+
+Approximation
+algorithms
+
+2. Considering linear transportation costs and post-hoc optimal
+solutions in multi-period inventory replenishment challenges
+
+are inputted into the replenishment quantity prediction module to
+determine the final replenishment decision. The proposed method integrates tasks that were previously separated in PTO (such as demand and
+VLT prediction and replenishment decision-making) into a single deep
+learning framework. Here, predictions of demand and VLT serve as
+auxiliary tasks, facilitating rapid model training, enabling performance
+monitoring, and enhancing generalizability to mitigate overfitting. In
+contrast to neural networks with direct full-feature interconnectivity,
+the modular approach delivers superior interpretability and efficiency,
+ensuring robust performance (Qi et al., 2023).
+From the contributions outlined in Table 1, the differences between
+the study and previous approaches can be clearly seen. The proposed
+method focuses on using an E2E deep learning approach to address
+the multi-period replenishment problem, which involves uncertainties
+in both demand and VLT, while also considering linear transportation
+costs. To better handle historical demand and VLT as time-series data,
+we have designed a modular neural network model based on the TFT
+time-series forecasting model. The contributions are encapsulated as
+follows. Firstly, we innovatively applied an E2E deep learning framework to address the challenges of multi-period inventory replenishment
+under the uncertainty of demand and VLT, including linear transportation costs. Our framework adeptly outputs replenishment decisions
+for order replenishment days, guided by the input features. Secondly,
+utilizing both simulated and real-world data from a beverage supplier,
+our experiments revealed that our end-to-end learning framework surpasses several benchmark models, particularly in achieving reduced
+inventory costs. lastly, proposed approach integrates a modular neural
+network design, incorporating TFT and LSTM models for predicting unknown demand and VLT, subsequently integrated with a replenishment
+quantity decision module.
+The remainder of the paper is organized as follows: Section 2
+delves into the multi-period inventory replenishment issue with linear
+transportation costs, outlining a post-hoc marking process using the
+gurobi solver to derive the target vector. Section 3 introduces the TFT
+model and explicates our deep learning neural network architecture.
+In Section 4, we engage in offline numerical experiments using both
+simulated and real-world data to validate the efficacy of our proposed
+model in reducing total inventory costs compared to other methods. Finally, Section 5 concludes with a summary and suggestions for potential
+future research directions.
+
+2.1. Overview of the inventory replenishment problem
+In the study, we tackle a multi-period inventory replenishment
+challenge characterized by unpredictable demand and VLT, coupled
+with transportation costs that vary linearly with order volume. Here’s
+the scenario: for an individual item stored in a single distribution center (DC), we consider a planning horizon denoted as 𝑇 . The uncertain
+demand on day 𝑡 is represented by 𝑑𝑡 . If a day concludes with surplus
+inventory, the inventory level is positive, which noted as the end-of-day
+stock quantity. Conversely, if a shortage occurs at day’s end, leading
+to stockouts, which noted as stockout costs are immediately incurred,
+and the inventory is reset to zero. Hence, at the end of each cycle, we
+incur either a holding cost ℎ per excess unit or a stockout cost 𝑏 per
+unit short. Moreover, if a replenishment order is placed on any given
+day, associated transportation costs based on the order volume are also
+applicable.
+The proposed model incorporates a periodic replenishment policy,
+where the replenishment cycle is predetermined by specific dates,
+allowing for orders to be placed at set intervals (such as on Mondays
+and Fridays). Concurrently, the model considers the stochastic nature
+of VLT, labeled as 𝑙𝑡 , denoting that an order made on day 𝑡 is expected
+to be delivered on day 𝑡 + 𝑙𝑡 , with 𝑙𝑡 being a random positive integer.
+The delivery time 𝑙𝑡 for a given day 𝑡 remains uncertain until the order
+is received on day 𝑡 + 𝑙𝑡 . Inspired by the graphical representations
+of inventory level changes, Bhavani, Mahapatra and Kumar (2023)
+and Bhavani, Mishra and Mahapatra (2023) considered a sustainable
+two-echelon green supply chain model and a two green-warehouse
+inventory systems with green investments, we drew Fig. 2 which depicts the inventory replenishment scenario, derived from the real data
+provided in this paper. The blue line illustrates the fluctuations in inventory levels, which change in response to daily sales and arrivals. The
+timeline begins at 𝑡0 , with certain dates marked as replenishment days,
+suggesting possible order placements. The horizontal purple dashed line
+shows the quantity of orders in transit. For instance, an order placed
+on 𝑡0 will arrive four days later on 𝑡4 , since 𝑙𝑡0 = 4, hence 𝑡0 + 𝑙𝑡0 = 𝑡4 ,
+thereby replenishing the inventory.
+3
+
+Expert Systems With Applications 261 (2025) 125464
+
+W. Guo et al.
+
+Fig. 2. Periodic replenishment.
+Table 2
+Parameter symbols and explanatory notes.
+Parameter
+
+Description
+
+𝑇 , 𝑇̃ , 𝑇𝐻
+𝑑𝑡
+𝑙𝑡
+𝑎𝑡
+𝑞𝑡 , 𝑞𝑡∗
+𝑝
+𝐾𝑓
+ℎ, 𝑏
+𝑚𝑡 , 𝑛𝑡
+𝜆𝑖
+
+Planning horizon, length of input contextual data, historical data
+Demand on day 𝑡
+VLT on day 𝑡
+Whether replenishment occurs on day 𝑡
+Replenishment quantity on day 𝑡, OPT on day 𝑡
+Number of boxes per pallet
+Transportation cost per box from the current DC to factory 𝑓
+Holding cost per box, stockout cost per box
+Inventory level on day 𝑡, stockout quantity on day 𝑡
+Loss weight for each output 𝑖
+
+units of pallets, with each SKU having a distinct number of boxes
+per pallet. Consequently, DCs must undertake replenishment in whole
+pallets. The binary variable 𝑎𝑡 indicates whether an order is placed on
+day 𝑡. 𝐾𝑓 denotes the per-box transportation cost for replenishment
+from two factories. It is worth noting that the scenario considers
+linear transportation costs, where costs are directly proportional to the
+transport quantity, implying that each unit of cargo transported incurs
+a specific cost. Thus, when placing orders for stock replenishment, it is
+essential to consider the increase in transportation costs corresponding
+to the order volume. Larger order sizes, while potentially reducing
+stockout rates and costs, can also lead to escalated holding and transportation expenses. The variables 𝑚𝑡 and 𝑛𝑡 represent the inventory
+level and the quantity of stockouts on day 𝑡, respectively. The initial
+inventory level is assumed to be 𝑚−1 . 𝑀 is a number large enough to
+be significant. The goal of problem (P1) is to minimize the aggregate
+costs of transportation, holding, and stockouts.
+Constraint (1) pertains to inventory equilibrium, allowing for the
+possibility of multiple orders arriving concurrently on the same day.
+Constraint (2) establishes the definition of daily stockout quantity.
+According to constraint (3), if day t is not a designated ordering day,
+then the order quantity on day 𝑡 should be zero. Constraint (5) applies
+a binary condition to 𝑎𝑡 , constraint (6) stipulates that inventory levels
+must be non-negative integers, and constraint (7) serves as a binary
+indicator for selecting between the two factories for procurement.
+
+Inventory costs are calculated in the following manner: The overall
+inventory cost is comprised of transportation, holding, and stockout
+costs. At the beginning of each cycle, it is imperative to verify whether
+any replenishment orders are arriving on that day, acknowledging
+that several orders might arrive simultaneously. Subsequently, demand
+levels are considered, and the inventory level at the end of the period
+is updated. Depending on final inventory level and any shortages,
+either holding costs or stockout costs are incurred. Moreover, on days
+designated for replenishment, when orders are placed, corresponding
+transportation costs are also incurred. Our goal is to minimize the
+total inventory cost within the specified planning period by accurately
+determining the necessary replenishment quantities.
+
+min
+
+𝑞𝑡 ,𝑦𝑡 ,𝑧𝑡
+
+2.2. Symbol explanation and model representation
+
+𝑇
+∑
+(
+)
+𝑎𝑡 𝑞𝑡 𝑝𝐾𝑓 + ℎ𝑚𝑡 + 𝑏𝑛𝑡
+
+(P1)
+
+𝑡=0
++
+
+⎛
+⎞
+∑
+s.t. 𝑚𝑡 = ⎜𝑚𝑡−1 +
+𝑞𝑖 𝑝 − 𝑑𝑡 ⎟
+⎜
+⎟
+{
+}
+𝑖∈ 𝑗∶𝑗+𝑙𝑗 =𝑡
+⎝
+⎠
+
+Below are the parameters pertinent to the problem and model, as
+outlined in Table 2.
+The problem of the multi-period inventory replenishment is encapsulated in a mathematical framework, using the function(⋅)+ = 𝑚𝑎𝑥(⋅, 0)
+to denote the maximum value in comparison with 0. In the context
+of problem (P1), 𝑞𝑡 symbolizes the replenishment quantity on day 𝑡,
+quantified in pallets. The term 𝑝 refers to the conversion ratio between
+pallets and boxes pertinent to the current SKU. Although boxes are
+typically employed for storage and sales in DCs, pallets are more efficient for picking and transportation processes. This setting necessitates
+conversion between different measurement units for diverse products.
+It is crucial to note that factories require DC replenishment in minimum
+
+∀t = 0, … , 𝑇
+
+(1)
+
+⎛
+⎞
+∑
+𝑛𝑡 = ⎜−𝑚𝑡−1 −
+𝑞𝑖 𝑝 + 𝑑𝑡 ⎟ ∀t = 0, … , 𝑇
+⎜
+⎟
+{
+}
+𝑖∈ 𝑗∶𝑗+𝑙𝑗 =𝑡
+⎝
+⎠
+
+(2)
+
+𝑞𝑡 ≤ 𝑀𝑎𝑡
+
+∀t = 0, … , 𝑇
+
+(3)
+
+𝑚𝑡 , 𝑛𝑡 , 𝑞𝑡 ≥ 0
+
+∀t = 0, … , 𝑇
+
+(4)
+
+∀t = 0, … , 𝑇
+
+(5)
+
+∀t = 0, … , 𝑇
+
+(6)
+
++
+
+𝑎𝑡 ∈ {0, 1}
+𝑚𝑡 , 𝑛𝑡 , 𝑞𝑡 ∈ Z
+𝑓 ∈ {0, 1}
+4
+
++
+
+(7)
+
+Expert Systems With Applications 261 (2025) 125464
+
+W. Guo et al.
+
+3. An end-to-end multi-period inventory replenishment strategy
+based on temporal fusion transformer
+
+2.3. Approach to post-hoc optimal solutions and labeling process
+In deep neural network training, mastering the transformation from
+input characteristics to output labels is vital. For our replenishment
+issue at hand, the objective revolves around ascertaining the ideal
+replenishment amount for each specified replenishment day after scrutinizing all encompassing context data 𝑋, which encompasses historical
+demand, historical VLT, and chronological data (like days, months,
+weekends, holidays, etc.). Nevertheless, given that the primary dataset
+only encompasses observational data of demand and lead times for
+replenishment without including the optimal replenishment quantities
+(the principal target vector), it is unsuitable for direct use as a training
+dataset. For each historical replenishment juncture, using the observed
+contextual data 𝑋, one needs to compute 𝑞 ∗ , signifying the optimal
+daily replenishment order quantity, to act as the target vector in
+supervised learning. The aforementioned phase is termed as ‘‘labeling’’
+within supervised learning techniques (James, Witten, Hastie, Tibshirani, et al., 2013). Once labeled data is accessible, the neural network
+training association can be exemplified as follows.
+min
+
+𝑁
+∑
+
+𝑓 ∶𝑋→𝑅
+
+𝐿(𝑓 (𝑥𝑖 ); 𝑞𝑖∗ )
+
+This section presents the development of the E2E deep learning
+model namely Multi-Period Inventory Replenishment by Temporal Fusion Transformer (TFT-MPIR), which tailored for addressing multiperiod inventory replenishment challenges with linear transportation
+costs.
+3.1. Framework for resolution
+The proposed framework for resolving multi-period replenishment
+issues is depicted in Fig. 3, comprising two distinct segments. The first
+segment involves the labeling. We commence by defining the multiperiod inventory replenishment issue inclusive of transportation costs,
+preprocess the initial data, and utilize the gurobi solver to ascertain the
+optimal quantities for replenishment. Optimal quantities are then employed as the target vectors (labels) for supervised learning, resulting in
+an updated labeled dataset. The second segment focuses on the model
+training and prediction. We begin by segmenting the dataset, then
+proceed to train the training set within the TFT-MPIR neural network
+model. The model is further assessed on a validation set, with the aim
+of determining the most cost-effective model during the training phase
+as the ultimate predictive model. Finally, the trained model is utilized
+to generate the predicted quantities for replenishment.
+
+(1)
+
+𝑖=1
+
+𝑁 represents the aggregate count of training data, while 𝐿 is the loss
+function outlined by the discrepancy between the model’s forecast 𝑓 (𝑥𝑖 )
+and the optimal order volume 𝑞𝑖∗ . Notably, we contemplate the neural
+network model for the function 𝑓 , with the intricacies of the neural
+network architecture to be delineated in Section 3.2.
+Here, we detail a methodology for calculating the optimal order
+labels based on historical data. Qi et al. originally developed a labeling process for multi-period inventory replenishment issues without
+accounting for transportation costs (Qi et al., 2023). However, incorporating linear transportation costs requires an alternate approach to
+compute the labels. Moreover, as both demand and VLT are accessible
+from historical data, problem (P1) can be redefined as a deterministic
+bulk problem, incorporating stockout costs, termed as problem (P2).
+min
+
+𝑞𝑡 ,𝑦𝑡 ,𝑧𝑡
+
+−1
+∑
+(
+)
+𝑎𝑡 𝑞𝑡 𝑝𝐾𝑓 + ℎ𝑚𝑡 + 𝑏𝑛𝑡
+
+3.2. TFT-MPIR neural network
+With the post-hoc optimal problem resolved and the training data
+suitably labeled in Section 2, we have now developed training data
+incorporating the target vector. Our aim is to train the neural network
+to accurately map the relationship between contextual information and
+optimal decision-making. The detailed TFT-MPIR neural network is
+shown in Fig. 4. The inputs to the TFT-MPIR model are segmented into
+six
+distinct
+parts
+({𝐷𝑖 }−1+𝑡̃ , {𝑋𝑖 }−1+𝑡̃ , {𝐿𝑖 }−1+𝑡̃ , {𝐺𝑖 }−1+𝑡̃ ,
+𝑖=−𝑇 +𝑡
+𝑖=−𝑇 +𝑡
+𝑖=−𝑇 +𝑡
+𝑖=−𝑇 +𝑡
+−1+𝑡
+𝑡+ℎ
+{𝐼𝑖 } ̃ , {𝐴𝑖 }𝑖=𝑡 ), each representing a different context sequence.
+𝑖=−𝑇 +𝑡
+
+𝐷𝑡 denotes features related to the historical demand noted prior to
+day 𝑡, while 𝑋𝑡 encompasses standard features acquired before day 𝑡,
+including aspects like product category, warehouse location, and timesensitive factors such as weekends or holidays. 𝐿𝑡 relates to features
+associated with VLT observed before day 𝑡. 𝐺𝑡 and 𝐼𝑡 correspond to the
+optimal quantities for order arrivals and inventory levels respectively,
+calculated prior to day 𝑡. 𝐴𝑡 is a determined Boolean value indicating
+whether replenishment is planned from day 𝑡 to 𝑡 + ℎ. 𝑇̃ signifies the
+duration of the input contextual data. The TFT-MPIR model produces
+three distinct outputs (Out1, Out2, Out3), where Out1 is the forecasted
+demand, Out2 is the forecasted VLT and the principal output, Out3
+symbolizes the ultimate replenishment decision, namely the replenishment quantity. Hence, the training goal is to fine-tune the function 𝑓 ({𝐷𝑖 }−1+𝑡̃ , {𝑋𝑖 }−1+𝑡̃ , {𝐿𝑖 }−1+𝑡̃ , {𝐺𝑖 }−1+𝑡̃ , {𝐼𝑖 }−1+𝑡̃ , {𝐴𝑖 }𝑡+ℎ
+𝑖=𝑡 )
+
+(P2)
+
+𝑡=−𝑇𝐻
++
+
+⎛
+⎞
+∑
+s.t. 𝑚𝑡 = ⎜𝑚𝑡−1 +
+𝑞𝑖 𝑝 − 𝑑𝑡 ⎟
+⎜
+⎟
+{
+}
+𝑖∈ 𝑗∶𝑗+𝑙𝑗 =𝑡
+⎝
+⎠
+
+∀t = −𝑇𝐻 , … , −1
+
+(1)
+
+⎛
+⎞
+∑
+𝑛𝑡 = ⎜−𝑚𝑡−1 −
+𝑞𝑖 𝑝 + 𝑑𝑡 ⎟ ∀t = −𝑇𝐻 , … , −1
+⎟
+⎜
+{
+}
+𝑖∈ 𝑗∶𝑗+𝑙𝑗 =𝑡
+⎝
+⎠
+
+(2)
+
+𝑞𝑡 ≤ 𝑀𝑎𝑡
+
+∀t = −𝑇𝐻 , … , −1
+
+(3)
+
+𝑚𝑡 , 𝑛𝑡 , 𝑞𝑡 ≥ 0
+
+∀t = −𝑇𝐻 , … , −1
+
+(4)
+
+𝑎𝑡 ∈ {0, 1}
+
+∀t = −𝑇𝐻 , … , −1
+
+(5)
+
+𝑚𝑡 , 𝑛𝑡 , 𝑞𝑡 ∈ Z+
+
+∀t = −𝑇𝐻 , … , −1
+
+(6)
+
++
+
+𝑓 ∈ {0, 1}
+
+𝑖=−𝑇 +𝑡
+
+𝑖=−𝑇 +𝑡
+
+𝑖=−𝑇 +𝑡
+
+𝑖=−𝑇 +𝑡
+
+𝑖=−𝑇 +𝑡
+
+to closely replicate Out3. Considering that the input for demand is a
+time series format and future demand significantly influences replenishment decisions, the demand forecasting module is crafted used TFT
+model which has garnered remarkable results in time series forecasting,
+particularly in sectors like transportation and energy (Nazir, Shaikh,
+Shah, & Khalil, 2023; Wu, Wang, & Zeng, 2022, 2023; Zhang, Zou,
+Yang, & Yang, 2022).
+TFT model is a multi-horizon time series forecasting deep learning
+model that possesses natural interpretability, offering stronger explanatory power compared to standard black-box models. Fig. 5 outlines
+the architecture of the TFT model. The TFT adeptly distinguishes and
+leverages various input types, encompassing static variables, known
+dynamic variables, and unknown dynamic variables. Within the model,
+its time-dependency processing component is capable of deriving both
+long and short-term temporal associations from observed or known
+
+(7)
+
+In the context of problem (P2), the historical data on demand and
+VLT extends from −𝑇𝐻 day to −1 day, 𝑇𝐻 is usually the larger value.
+Retailers amass a wealth of historical information, including past sales
+and VLT, for training data. Consequently, in this scenario, 𝑑𝑡 and
+𝑙𝑡 are replaced with their actual historical counterparts. Addressing
+such a deterministic bulk problem, including stockout costs, can be
+addressed through dynamic programming or efficiently solved using
+commercial solvers. Solving this problem enables us to ascertain the
+optimal replenishment quantity, 𝑞𝑡∗ , for each designated ordering day,
+specifically on days 𝑡 where 𝑎𝑡 = 1, culminating in the generation of
+labeled data.
+5
+
+

@@ -1,0 +1,11 @@
+{
+  "holding_cost_ratio": 0.01,
+  "stockout_to_transport_ratio": 1.5,
+  "order_weekdays": [
+    0,
+    4
+  ],
+  "n_rows": 801,
+  "n_groups": 9,
+  "total_cost_sum": 5236609.279999937
+}
