@@ -67,6 +67,7 @@ def solve_dcsku_milp(
     holding_cost,
     stockout_cost,
     order_mask,
+    time_limit: int = 30,
 ):
     horizon = len(demand)
     n = horizon
@@ -115,7 +116,7 @@ def solve_dcsku_milp(
         constraints=constraints,
         integrality=integrality,
         bounds=Bounds(lb, ub),
-        options={"time_limit": 30},
+        options={"time_limit": time_limit},
     )
     if not result.success:
         raise RuntimeError("MILP failed: {}".format(result.message))
@@ -137,6 +138,9 @@ def generate_optimal_labels(
     stockout_to_transport_ratio: float = 1.5,
     order_weekdays=(0, 4),
     limit_groups: int = 0,
+    time_limit: int = 30,
+    skip_failures: bool = True,
+    solved_groups=None,
 ):
     sales_group = {
         key: grp.sort_values("date").reset_index(drop=True)
@@ -147,11 +151,14 @@ def generate_optimal_labels(
 
     all_rows = []
     summary_rows = []
+    failed_rows = []
     groups = list(lead.groupby(["dc_id", "sku_id"]))
     if limit_groups > 0:
         groups = groups[:limit_groups]
 
     for idx, ((dc_id, sku_id), lead_grp) in enumerate(groups, start=1):
+        if solved_groups and (dc_id, sku_id) in solved_groups:
+            continue
         lead_grp = lead_grp.sort_values("date").reset_index(drop=True)
         sales_grp = sales_group.get((dc_id, sku_id))
         if sales_grp is None:
@@ -171,16 +178,31 @@ def generate_optimal_labels(
         holding_cost = holding_cost_ratio * stockout_cost
         order_mask = lead_grp["date"].dt.weekday.isin(order_weekdays).values.astype(bool)
 
-        q, m, s, objective = solve_dcsku_milp(
-            demand=demand,
-            leadtime=leadtime,
-            initial_inventory=initial_inventory,
-            unit_transport_cost=unit_transport_cost,
-            pt_box=pt_box,
-            holding_cost=holding_cost,
-            stockout_cost=stockout_cost,
-            order_mask=order_mask,
-        )
+        try:
+            q, m, s, objective = solve_dcsku_milp(
+                demand=demand,
+                leadtime=leadtime,
+                initial_inventory=initial_inventory,
+                unit_transport_cost=unit_transport_cost,
+                pt_box=pt_box,
+                holding_cost=holding_cost,
+                stockout_cost=stockout_cost,
+                order_mask=order_mask,
+                time_limit=time_limit,
+            )
+        except RuntimeError as exc:
+            failed_rows.append(
+                {
+                    "dc_id": dc_id,
+                    "sku_id": sku_id,
+                    "n_days": int(len(lead_grp)),
+                    "error": str(exc),
+                }
+            )
+            print("Failed {}_{}: {}".format(dc_id, sku_id, exc))
+            if skip_failures:
+                continue
+            raise
         arrivals, sim_inventory, sim_stockout = simulate_inventory_path(
             initial_inventory=initial_inventory,
             demand=demand,
@@ -237,7 +259,8 @@ def generate_optimal_labels(
 
     labels_df = pd.DataFrame(all_rows).sort_values(["dc_id", "sku_id", "date"]).reset_index(drop=True)
     summary_df = pd.DataFrame(summary_rows).sort_values(["dc_id", "sku_id"]).reset_index(drop=True)
-    return labels_df, summary_df
+    failed_df = pd.DataFrame(failed_rows).sort_values(["dc_id", "sku_id"]).reset_index(drop=True) if failed_rows else pd.DataFrame(columns=["dc_id", "sku_id", "n_days", "error"])
+    return labels_df, summary_df, failed_df
 
 
 def parse_args():
@@ -248,6 +271,9 @@ def parse_args():
     parser.add_argument("--stockout_to_transport_ratio", type=float, default=1.5)
     parser.add_argument("--order_weekdays", type=str, default="0,4")
     parser.add_argument("--limit_groups", type=int, default=0)
+    parser.add_argument("--time_limit", type=int, default=30)
+    parser.add_argument("--fail_on_error", action="store_true")
+    parser.add_argument("--resume", action="store_true")
     return parser.parse_args()
 
 
@@ -255,7 +281,27 @@ def main():
     args = parse_args()
     order_weekdays = tuple(int(x) for x in args.order_weekdays.split(",") if x.strip())
     sales, lead, dc_inventory, tariff, unit_rate = load_data(Path(args.data_dir))
-    labels_df, summary_df = generate_optimal_labels(
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    solved_groups = set()
+    existing_labels_path = output_dir / "optimal_replenishment_labels.csv"
+    existing_summary_path = output_dir / "optimal_replenishment_summary.csv"
+    existing_failed_path = output_dir / "failed_groups.csv"
+
+    existing_labels = pd.DataFrame()
+    existing_summary = pd.DataFrame()
+    existing_failed = pd.DataFrame()
+
+    if args.resume and existing_summary_path.exists():
+        existing_summary = pd.read_csv(existing_summary_path)
+        solved_groups = set(zip(existing_summary["dc_id"], existing_summary["sku_id"]))
+    if args.resume and existing_labels_path.exists():
+        existing_labels = pd.read_csv(existing_labels_path)
+    if args.resume and existing_failed_path.exists():
+        existing_failed = pd.read_csv(existing_failed_path)
+
+    labels_df, summary_df, failed_df = generate_optimal_labels(
         sales=sales,
         lead=lead,
         dc_inventory=dc_inventory,
@@ -265,19 +311,36 @@ def main():
         stockout_to_transport_ratio=args.stockout_to_transport_ratio,
         order_weekdays=order_weekdays,
         limit_groups=args.limit_groups,
+        time_limit=args.time_limit,
+        skip_failures=not args.fail_on_error,
+        solved_groups=solved_groups,
     )
+    if not existing_labels.empty:
+        labels_df = pd.concat([existing_labels, labels_df], ignore_index=True)
+        labels_df = labels_df.drop_duplicates(subset=["dc_id", "sku_id", "date"], keep="last")
+    if not existing_summary.empty:
+        summary_df = pd.concat([existing_summary, summary_df], ignore_index=True)
+        summary_df = summary_df.drop_duplicates(subset=["dc_id", "sku_id"], keep="last")
+    if not existing_failed.empty:
+        failed_df = pd.concat([existing_failed, failed_df], ignore_index=True)
+        failed_df = failed_df.drop_duplicates(subset=["dc_id", "sku_id"], keep="last")
 
-    output_dir = Path(args.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    labels_df.to_csv(output_dir / "optimal_replenishment_labels.csv", index=False)
-    summary_df.to_csv(output_dir / "optimal_replenishment_summary.csv", index=False)
+    labels_df = labels_df.sort_values(["dc_id", "sku_id", "date"]).reset_index(drop=True)
+    summary_df = summary_df.sort_values(["dc_id", "sku_id"]).reset_index(drop=True)
+    failed_df = failed_df.sort_values(["dc_id", "sku_id"]).reset_index(drop=True)
+
+    labels_df.to_csv(existing_labels_path, index=False)
+    summary_df.to_csv(existing_summary_path, index=False)
+    failed_df.to_csv(existing_failed_path, index=False)
 
     metadata = {
         "holding_cost_ratio": args.holding_cost_ratio,
         "stockout_to_transport_ratio": args.stockout_to_transport_ratio,
         "order_weekdays": list(order_weekdays),
+        "time_limit": args.time_limit,
         "n_rows": int(len(labels_df)),
         "n_groups": int(summary_df.shape[0]),
+        "n_failed_groups": int(len(failed_df)),
         "total_cost_sum": float(summary_df["objective"].sum()) if not summary_df.empty else 0.0,
     }
     with open(output_dir / "metadata.json", "w", encoding="utf-8") as f:

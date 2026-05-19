@@ -1,0 +1,2 @@
+dc_id,sku_id,n_days,error
+DC010,SKU063,89,MILP failed: Time limit reached. (HiGHS Status 13: Time limit reached)
