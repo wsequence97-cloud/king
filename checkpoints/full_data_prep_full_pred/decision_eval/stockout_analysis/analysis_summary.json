@@ -1,0 +1,9 @@
+{
+  "n_groups": 831,
+  "n_daily_rows": 7479,
+  "top_group_by_stockout": {
+    "dc_id": "DC010",
+    "sku_id": "SKU023"
+  },
+  "top_group_pred_stockout_cost": 15081300.0
+}

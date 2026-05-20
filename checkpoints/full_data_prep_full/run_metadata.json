@@ -1,0 +1,15 @@
+{
+  "device": "cpu",
+  "used_existing_labels": true,
+  "labels_rows": 73959,
+  "labels_groups": 831,
+  "proxy_feature_rows": 75365,
+  "aligned_rows": 20774,
+  "train_rows": 15788,
+  "val_rows": 2493,
+  "test_rows": 2493,
+  "label_target_col": "optimal_replenishment_box",
+  "keep_only_order_days": true,
+  "used_vlt_predictions": false,
+  "used_tft_predictions": false
+}

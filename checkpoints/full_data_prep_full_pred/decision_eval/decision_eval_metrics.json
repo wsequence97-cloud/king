@@ -1,0 +1,21 @@
+{
+  "device": "cpu",
+  "n_split_rows": 2493,
+  "n_sim_rows": 7479,
+  "regression_metrics": {
+    "MAE": 1025.1435546875,
+    "RMSE": 3447.171630859375,
+    "MAPE": 147.98502922058105
+  },
+  "cost_summary": {
+    "pred_transport_cost": 640187281.0,
+    "pred_holding_cost": 10991758.74,
+    "pred_stockout_cost": 529300491.0,
+    "pred_total_cost": 1180479530.74,
+    "opt_transport_cost": 677352360.0,
+    "opt_holding_cost": 18568423.035,
+    "opt_stockout_cost": 2164993.5,
+    "opt_total_cost": 698085776.5350001,
+    "total_gap_pct_vs_opt": 69.10236111662333
+  }
+}

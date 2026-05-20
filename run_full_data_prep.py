@@ -38,6 +38,8 @@ def parse_args():
     parser.add_argument("--holding_cost_ratio", type=float, default=0.01)
     parser.add_argument("--stockout_to_transport_ratio", type=float, default=1.5)
     parser.add_argument("--order_weekdays", type=str, default="0,4")
+    parser.add_argument("--existing_labels_csv", type=str, default="")
+    parser.add_argument("--existing_labels_summary_csv", type=str, default="")
     parser.add_argument("--label_target_col", type=str, default="optimal_replenishment_box")
     parser.add_argument("--keep_only_order_days", action="store_true")
     parser.add_argument("--skip_vlt", action="store_true")
@@ -56,19 +58,36 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using device:", device)
 
-    sales_opt, lead_opt, dc_inventory_opt, tariff_opt, unit_rate_opt = load_data(Path(args.data_dir))
     order_weekdays = tuple(int(x) for x in args.order_weekdays.split(",") if x.strip())
-    labels_df, summary_df = generate_optimal_labels(
-        sales=sales_opt,
-        lead=lead_opt,
-        dc_inventory=dc_inventory_opt,
-        tariff=tariff_opt,
-        unit_rate=unit_rate_opt,
-        holding_cost_ratio=args.holding_cost_ratio,
-        stockout_to_transport_ratio=args.stockout_to_transport_ratio,
-        order_weekdays=order_weekdays,
-        limit_groups=args.limit_groups,
-    )
+
+    if args.existing_labels_csv:
+        labels_path = Path(args.existing_labels_csv)
+        labels_df = pd.read_csv(labels_path)
+        labels_df["date"] = pd.to_datetime(labels_df["date"])
+        if args.existing_labels_summary_csv:
+            summary_df = pd.read_csv(args.existing_labels_summary_csv)
+        else:
+            summary_df = (
+                labels_df.groupby(["dc_id", "sku_id"], as_index=False)
+                .agg(
+                    objective=("optimal_replenishment_box", "sum"),
+                    optimal_replenishment_box=("optimal_replenishment_box", "sum"),
+                )
+            )
+        print("Loaded existing labels:", len(labels_df), "rows")
+    else:
+        sales_opt, lead_opt, dc_inventory_opt, tariff_opt, unit_rate_opt = load_data(Path(args.data_dir))
+        labels_df, summary_df = generate_optimal_labels(
+            sales=sales_opt,
+            lead=lead_opt,
+            dc_inventory=dc_inventory_opt,
+            tariff=tariff_opt,
+            unit_rate=unit_rate_opt,
+            holding_cost_ratio=args.holding_cost_ratio,
+            stockout_to_transport_ratio=args.stockout_to_transport_ratio,
+            order_weekdays=order_weekdays,
+            limit_groups=args.limit_groups,
+        )
     labels_df.to_csv(output_dir / "optimal_replenishment_labels.csv", index=False)
     summary_df.to_csv(output_dir / "optimal_replenishment_summary.csv", index=False)
     print("Saved optimal labels:", len(labels_df), "rows")
@@ -135,6 +154,7 @@ def main():
 
     metadata = {
         "device": str(device),
+        "used_existing_labels": bool(args.existing_labels_csv),
         "labels_rows": int(len(labels_df)),
         "labels_groups": int(summary_df.shape[0]),
         "proxy_feature_rows": int(len(proxy_decision_df)),

@@ -1,0 +1,23 @@
+{
+  "device": "cpu",
+  "used_existing_labels": true,
+  "labels_rows": 73959,
+  "labels_groups": 831,
+  "proxy_feature_rows": 75365,
+  "aligned_rows": 20774,
+  "train_rows": 15788,
+  "val_rows": 2493,
+  "test_rows": 2493,
+  "label_target_col": "optimal_replenishment_box",
+  "keep_only_order_days": true,
+  "used_vlt_predictions": true,
+  "used_tft_predictions": true,
+  "decision_metrics": {
+    "MAE": 1025.1435546875,
+    "RMSE": 3447.171630859375,
+    "MAPE": 147.98502922058105
+  },
+  "decision_train_rows_used": 15788,
+  "decision_val_rows_used": 2493,
+  "decision_test_rows_used": 2493
+}
