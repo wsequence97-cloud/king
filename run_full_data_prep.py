@@ -14,7 +14,6 @@ from full_pipeline import (
     train_decision_model_from_dataframe,
     train_vlt_module,
 )
-from optimal_label_generator import generate_optimal_labels, load_data
 
 
 def parse_args():
@@ -76,6 +75,8 @@ def main():
             )
         print("Loaded existing labels:", len(labels_df), "rows")
     else:
+        from optimal_label_generator import generate_optimal_labels, load_data
+
         sales_opt, lead_opt, dc_inventory_opt, tariff_opt, unit_rate_opt = load_data(Path(args.data_dir))
         labels_df, summary_df = generate_optimal_labels(
             sales=sales_opt,
